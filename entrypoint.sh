@@ -19,6 +19,7 @@ branch_name="port_$port_run_id"
 git_url="$INPUT_GITHUBURL"
 
 get_access_token() {
+  echo "get access token"
   curl -s --location --request POST 'https://api.getport.io/v1/auth/access_token' --header 'Content-Type: application/json' --data-raw "{
     \"clientId\": \"$port_client_id\",
     \"clientSecret\": \"$port_client_secret\"
@@ -26,6 +27,7 @@ get_access_token() {
 }
 
 send_log() {
+  echo "sending log"
   message=$1
   curl --location "https://api.getport.io/v1/actions/runs/$port_run_id/logs" \
     --header "Authorization: Bearer $access_token" \
@@ -46,6 +48,7 @@ add_link() {
 }
 
 create_repository() {  
+  echo "crete_repository function"
   resp=$(curl -H "Authorization: token $github_token" -H "Accept: application/json" -H "Content-Type: application/json" $git_url/users/$org_name)
 
   userType=$(jq -r '.type' <<< "$resp")
@@ -68,22 +71,26 @@ create_repository() {
 }
 
 clone_monorepo() {
+  echo "cloning monorepo"
   git clone $monorepo_url monorepo
   cd monorepo
   git checkout -b $branch_name
 }
 
 prepare_cookiecutter_extra_context() {
+  echo "prepare_cookiecutter_extra_context"
   echo "$port_user_inputs" | jq 'with_entries(select(.key | startswith("cookiecutter_")) | .key |= sub("cookiecutter_"; ""))'
 }
 
 cd_to_scaffold_directory() {
+  echo "cd_to_scaffold_directory"
   if [ -n "$monorepo_url" ] && [ -n "$scaffold_directory" ]; then
     cd $scaffold_directory
   fi
 }
 
 apply_cookiecutter_template() {
+  echo "apply_cookiecutter_template"
   extra_context=$(prepare_cookiecutter_extra_context)
 
   echo "🍪 Applying cookiecutter template $cookie_cutter_template with extra context $extra_context"
@@ -108,6 +115,7 @@ apply_cookiecutter_template() {
 
 
 push_to_repository() {
+  echo "push_to_repository"
   if [ -n "$monorepo_url" ] && [ -n "$scaffold_directory" ]; then
     git config user.name "GitHub Actions Bot"
     git config user.email "github-actions[bot]@users.noreply.github.com"
@@ -155,6 +163,7 @@ push_to_repository() {
 
 
 report_to_port() {
+  echo "report_to_port"
   curl --location "https://api.getport.io/v1/blueprints/$blueprint_identifier/entities?run_id=$port_run_id" \
     --header "Authorization: Bearer $access_token" \
     --header "Content-Type: application/json" \
@@ -166,6 +175,7 @@ report_to_port() {
 }
 
 main() {
+  echo "executing main function"
   access_token=$(get_access_token)
 
   if [ -z "$monorepo_url" ] || [ -z "$scaffold_directory" ]; then
